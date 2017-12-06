@@ -1,4 +1,5 @@
 from ctypes import CFUNCTYPE, c_char_p, c_int, cdll
+import shutil
 import contextlib
 import io
 import sys
@@ -54,7 +55,7 @@ class Song(object):
 
 
     def get_filename_hash(self):
-        hsh = md5('{}_{}'.format(self.trackinfo['title'], self.trackinfo['artist']).encode()).hexdigest()
+        hsh = '/tmp/'+md5('{}_{}'.format(self.trackinfo['title'], self.trackinfo['artist']).encode()).hexdigest()
         open(hsh, 'a').close()
         if os.path.getsize(hsh) == self.fullsize:
             self.is_downloaded = True
@@ -106,11 +107,12 @@ def start_stream(player):
                 player.current_song = None
                 del player.stream_chunks[0]
             elif player.stream_chunks[0] not in ('rewind', 'forward', 'reset_time'):
-                print('\r{:0>2}:{:0>2}'.format(divmod(player.current_song_position, 60)[0], divmod(player.current_song_position, 60)[1]), end='')
                 player.current_song_position += 1
                 stream.write(player.stream_chunks[0]._data)
                 del player.stream_chunks[0]
-                if player.current_song_position > int(player.playlist[player.current_song].duration/1000):
+                if player.current_song_position >= int(
+                    player.playlist[player.current_song].duration/1000
+                ):
                     player.stream_chunks = []
                     player.stream_chunks.append('reset_time')
                     player.stream_chunks.append('next')
@@ -119,6 +121,27 @@ def start_stream(player):
                 player.current_song_position = 0
         stream.stop_stream()
         stream.close()
+
+def print_line(player):
+    print()
+    while player.current_song!=None:
+        songinfo = player.playlist[player.current_song].trackinfo['artist']+' - '+ player.playlist[player.current_song].trackinfo['title']
+        current_time = '{:0>2}:{:0>2}'.format(
+            divmod(player.current_song_position, 60)[0],
+            divmod(player.current_song_position, 60)[1])+'/'+ '{:0>2}:{:0>2}'.format(
+                divmod(int(player.playlist[player.current_song].duration/1000), 60)[0],
+                divmod(int(player.playlist[player.current_song].duration/1000), 60)[1])
+        gaplen = shutil.get_terminal_size()[0]-len(current_time)-len(songinfo)-2
+        if gaplen<=0:
+            gap = ' '
+            songinfo = songinfo[:(shutil.get_terminal_size()[0]-len(current_time)-1)]
+        else:
+            percentage_duration = int(player.current_song_position/int(player.playlist[player.current_song].duration/1000)*gaplen)
+            bar = '\033[37m'+'━'*percentage_duration+'\033[39m'
+            gap = ' '+ bar + ' '*(gaplen-len(bar)+10)+ ' '
+
+        print('\r'+current_time+gap+songinfo, end='')
+        time.sleep(0.5)
 
 
 def download_tracks(player):
@@ -133,7 +156,6 @@ def download_tracks(player):
                         if track.current_size == track.fullsize:
                             track.is_downloaded = True
                             track.current_size = track.fullsize
-    print('STOPPED DOWNLOAD')
 
 class Player(object):
 
@@ -148,8 +170,11 @@ class Player(object):
     def play(self, trackno=0):
         self.state='play'
         download_loop = Thread(target=download_tracks, args=(self,))
+        print_loop = Thread(target=print_line, args=(self,))
         stream_loop = Thread(target=start_stream, args=(self,))
         download_loop.daemon = True
+        print_loop.daemon = True
+        print_loop.start()
         download_loop.start()
         stream_loop.start()
         while self.state != 'stopped':
