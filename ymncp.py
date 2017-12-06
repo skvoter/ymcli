@@ -18,8 +18,8 @@ logging.basicConfig(level=logging.INFO)
 TRACK_DOWNLOAD_INFO = 'https://storage.mds.yandex.net/download-info/{}/2?format=json'
 HANDLERS = {
     'TRACK': 'https://music.yandex.ru/handlers/track.jsx?track={}',
-    'ALBUM': 'https://music.yandex.ru/handlers/track.jsx?track={}',
-    'ARTIST': 'https://music.yandex.ru/handlers/track.jsx?track={}',
+    'ALBUM': 'https://music.yandex.ru/handlers/album.jsx?album={}',
+    'ARTIST': 'https://music.yandex.ru/handlers/artist.jsx?artist={}',
 }
 
 
@@ -96,14 +96,14 @@ def start_stream(player):
                 time.sleep(1)
             elif player.stream_chunks[0] == 'next':
                 if player.current_song == len(player.playlist)-1:
+                    player.stream_chunks = []
                     player.stream_chunks.append('stop_player')
-                    print('HEY IM HERE')
-                    player.current_song = -1
                 else:
                     player.current_song += 1
-                del player.stream_chunks[0]
+                    del player.stream_chunks[0]
             elif player.stream_chunks[0] == 'stop_player':
-                player.state == 'stopped'
+                player.state = 'stopped'
+                player.current_song = None
                 del player.stream_chunks[0]
             elif player.stream_chunks[0] not in ('rewind', 'forward', 'reset_time'):
                 print('\r{:0>2}:{:0>2}'.format(divmod(player.current_song_position, 60)[0], divmod(player.current_song_position, 60)[1]), end='')
@@ -119,24 +119,18 @@ def start_stream(player):
                 player.current_song_position = 0
         stream.stop_stream()
         stream.close()
-        player.state = 'exit'
-        print('EXIT STATE')
 
 
 def download_tracks(player):
-    while player.state != 'exit':
+    while player.state != 'stopped':
         for track in player.playlist:
             if track.is_downloaded == False:
-                # print('Download track {}'.format(track.trackinfo['title']))
                 with open(track.filename, 'wb') as f:
                     r = requests.get(track.download_link, headers={'Range':'bytes={}-{}'.format(track.current_size, track.fullsize)}, stream=True)
                     for chunk in r.iter_content(track.chunk_size):
                         f.write(chunk)
-                        # print(track.current_size, track.fullsize)
                         track.current_size += len(chunk)
                         if track.current_size == track.fullsize:
-                            # print(track.current_size, track.fullsize)
-                            # print(os.path.getsize(track.filename))
                             track.is_downloaded = True
                             track.current_size = track.fullsize
     print('STOPPED DOWNLOAD')
@@ -158,21 +152,21 @@ class Player(object):
         download_loop.daemon = True
         download_loop.start()
         stream_loop.start()
-        for song in self.playlist:
-            # print('Play track {}'.format(song.trackinfo['title']))
-            self.current_song = self.playlist.index(song)
+        while self.state != 'stopped':
+            song = self.playlist[self.current_song]
             with open(song.filename, 'rb') as r:
                 if song.is_downloaded == True:
                     self.stream_chunks.append('reset_time')
                     segment = AudioSegment.from_mp3(r)
                     self.stream_chunks += make_chunks(segment, 1000)
+                    while self.current_song == self.playlist.index(song):
+                        time.sleep(1)
                 else:
                     flag = True
                     self.stream_chunks.append('reset_time')
-                    while self.current_song == self.playlist.index(song) :
+                    while self.current_song == self.playlist.index(song):
                         chunk = r.read(song.chunk_size)
                         if len(chunk)==song.chunk_size:
-                            # print('READ SOME!!!')
                             chunk = io.BytesIO(chunk)
                             segment = AudioSegment.from_mp3(chunk)
                             self.stream_chunks += make_chunks(segment, 1000)
@@ -182,15 +176,11 @@ class Player(object):
                                 chunk = io.BytesIO(chunk)
                                 segment = AudioSegment.from_mp3(chunk)
                                 self.stream_chunks += make_chunks(segment, 1000)
-                            # print('added last chunk')
                             self.stream_chunks.append('reset_time')
                             flag = False
                         elif flag is True:
                             r.seek(-(len(chunk)), 1)
-                            # print('sleep a bit')
                             time.sleep(1)
-            if self.state in ('stopped', 'exit'):
-                break
 
 
 @contextlib.contextmanager
@@ -217,7 +207,7 @@ def noalsaerr():
     asound = cdll.LoadLibrary('libasound.so')
     asound.snd_lib_error_set_handler(c_error_handler)
     yield
-    asound.snd_lib.error_set_handler(None)
+    asound.snd_lib_error_set_handler(None)
 
 def main():
     with ignore_stdout():
