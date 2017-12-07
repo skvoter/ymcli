@@ -260,10 +260,18 @@ def noalsaerr():
 def main():
     with ignore_stdout():
         player = Player()
-    for link in sys.argv[1:]:
-        song = Song(link)
-        player.playlist.append(song)
-    player.play()
+    try:
+        for link in sys.argv[1:]:
+            song = Song(link)
+            player.playlist.append(song)
+        player.play()
+    except KeyboardInterrupt:
+        player.state = 'stopped'
+        for path in os.listdir('/tmp/'):
+            if path.startswith('ymnc'):
+                os.remove('/tmp/'+path)
+        print('\nGoodbye!')
+        sys.exit(0)
 
 if __name__ == '__main__':
     main()
