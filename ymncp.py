@@ -55,7 +55,7 @@ class Song(object):
 
 
     def get_filename_hash(self):
-        hsh = '/tmp/'+md5('{}_{}'.format(self.trackinfo['title'], self.trackinfo['artist']).encode()).hexdigest()
+        hsh = '/tmp/ymnc'+md5('{}_{}'.format(self.trackinfo['title'], self.trackinfo['artist']).encode()).hexdigest()
         open(hsh, 'a').close()
         if os.path.getsize(hsh) == self.fullsize:
             self.is_downloaded = True
@@ -107,10 +107,10 @@ def start_stream(player):
                 player.current_song = None
                 del player.stream_chunks[0]
             elif player.stream_chunks[0] not in ('rewind', 'forward', 'reset_time'):
-                player.current_song_position += 1
                 stream.write(player.stream_chunks[0]._data)
+                player.current_song_position += 1
                 del player.stream_chunks[0]
-                if player.current_song_position >= int(
+                if player.current_song_position > (
                     player.playlist[player.current_song].duration/1000
                 ):
                     player.stream_chunks = []
@@ -124,38 +124,62 @@ def start_stream(player):
 
 def print_line(player):
     print()
-    while player.current_song!=None:
-        songinfo = player.playlist[player.current_song].trackinfo['artist']+' - '+ player.playlist[player.current_song].trackinfo['title']
+    while player.state != 'stopped':
+        current_song = player.playlist[player.current_song]
+        songinfo = current_song.trackinfo['artist']+' - '+ current_song.trackinfo['title']
         current_time = '{:0>2}:{:0>2}'.format(
             divmod(player.current_song_position, 60)[0],
             divmod(player.current_song_position, 60)[1])+'/'+ '{:0>2}:{:0>2}'.format(
-                divmod(int(player.playlist[player.current_song].duration/1000), 60)[0],
-                divmod(int(player.playlist[player.current_song].duration/1000), 60)[1])
+                divmod(int(current_song.duration/1000), 60)[0],
+                divmod(int(current_song.duration/1000), 60)[1])
         gaplen = shutil.get_terminal_size()[0]-len(current_time)-len(songinfo)-2
         if gaplen<=0:
             gap = ' '
             songinfo = songinfo[:(shutil.get_terminal_size()[0]-len(current_time)-1)]
         else:
-            percentage_duration = int(player.current_song_position/int(player.playlist[player.current_song].duration/1000)*gaplen)
-            bar = '\033[37m'+'━'*percentage_duration+'\033[39m'
-            gap = ' '+ bar + ' '*(gaplen-len(bar)+10)+ ' '
-
+            percentage_duration = int(
+                player.current_song_position/int(current_song.duration/1000)*gaplen
+            )
+            percentage_size = int((current_song.current_size/current_song.fullsize)*gaplen)
+            bar = (
+                '\033[37m'+ \
+                '━'*percentage_duration + \
+                '\033[90m'+ \
+                '━'*(percentage_size-percentage_duration) + \
+                '\033[39m'
+            )
+            gap = ' '+ bar + ' '*(gaplen-len(bar)+15)+ ' '
         print('\r'+current_time+gap+songinfo, end='')
-        time.sleep(0.5)
+        time.sleep(0.3)
 
 
 def download_tracks(player):
-    while player.state != 'stopped':
-        for track in player.playlist:
-            if track.is_downloaded == False:
-                with open(track.filename, 'wb') as f:
-                    r = requests.get(track.download_link, headers={'Range':'bytes={}-{}'.format(track.current_size, track.fullsize)}, stream=True)
-                    for chunk in r.iter_content(track.chunk_size):
-                        f.write(chunk)
-                        track.current_size += len(chunk)
-                        if track.current_size == track.fullsize:
-                            track.is_downloaded = True
-                            track.current_size = track.fullsize
+    while player.state != 'stopped' and player.current_song!=None:
+        track = player.playlist[player.current_song]
+        while player.current_song == player.playlist.index(track):
+            binds = player.playlist[player.current_song:player.current_song+2]
+            for track in binds:
+                if track.is_downloaded == False:
+                    with open(track.filename, 'wb') as f:
+                        internet = False
+                        while internet is False:
+                            try:
+                                r = requests.get(
+                                    track.download_link,
+                                    headers={'Range':'bytes={}-{}'.format(
+                                        track.current_size, track.fullsize
+                                    )}, stream=True)
+                                internet = True
+                            except:
+                                time.sleep(2)
+                        for chunk in r.iter_content(track.chunk_size):
+                            f.write(chunk)
+                            track.current_size += len(chunk)
+                            if track.current_size == track.fullsize:
+                                track.is_downloaded = True
+                                track.current_size = track.fullsize
+                else:
+                    track.current_size = track.fullsize
 
 class Player(object):
 
@@ -164,7 +188,7 @@ class Player(object):
         self.playlist = []
         self.stream = pa.PyAudio()
         self.current_song = 0
-        self.current_song_position = 6
+        self.current_song_position = 0
         self.stream_chunks = []
 
     def play(self, trackno=0):
@@ -197,7 +221,6 @@ class Player(object):
                             self.stream_chunks += make_chunks(segment, 1000)
                         elif os.path.getsize(song.filename)==song.fullsize and flag is True:
                             if len(chunk)!=0:
-                                print(len(chunk))
                                 chunk = io.BytesIO(chunk)
                                 segment = AudioSegment.from_mp3(chunk)
                                 self.stream_chunks += make_chunks(segment, 1000)
