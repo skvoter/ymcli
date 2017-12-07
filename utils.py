@@ -1,5 +1,6 @@
-import requests, json, os, sys, contextlib
+import requests, json, os, sys, contextlib, string, time
 from ctypes import CFUNCTYPE, c_char_p, c_int, cdll
+import threading
 
 
 TRACK_DOWNLOAD_INFO = 'https://storage.mds.yandex.net/download-info/{}/2?format=json'
@@ -9,6 +10,22 @@ HANDLERS = {
     'ARTIST': 'https://music.yandex.ru/handlers/artist.jsx?artist={}',
 }
 
+class _Getch:
+    def __init__(self):
+        import tty, sys
+
+    def __call__(self):
+        import sys, tty, termios
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
+getch = _Getch()
 
 def load_json(handler, id):
     r = requests.get(handler.format(id))
@@ -39,4 +56,14 @@ def noalsaerr():
     asound.snd_lib_error_set_handler(c_error_handler)
     yield
     asound.snd_lib_error_set_handler(None)
+
+
+def quit(player):
+    player.state = 'stopped'
+    print('\nExiting...')
+    time.sleep(1)
+    player.current_song = None
+    # while player.stopped != True:
+        # pass
+
 

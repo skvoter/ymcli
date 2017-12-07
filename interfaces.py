@@ -6,7 +6,7 @@ from pydub.utils import make_chunks
 from threading import Thread
 
 from utils import TRACK_DOWNLOAD_INFO, HANDLERS, load_json
-from loop_routins import download_tracks, start_stream, print_line
+from loop_routins import download_tracks, start_stream, print_line, handle_controls
 
 
 class Song(object):
@@ -79,18 +79,22 @@ class Player(object):
         self.current_song = 0
         self.current_song_position = 0
         self.stream_chunks = []
+        self.stopped = False
 
     def play(self, trackno=0):
         self.state='play'
         download_loop = Thread(target=download_tracks, args=(self,))
         print_loop = Thread(target=print_line, args=(self,))
+        handle_loop = Thread(target=handle_controls, args=(self,))
         stream_loop = Thread(target=start_stream, args=(self,))
         download_loop.daemon = True
         print_loop.daemon = True
+        handle_loop.daemon = True
         print_loop.start()
         download_loop.start()
         stream_loop.start()
-        while self.state != 'stopped':
+        handle_loop.start()
+        while self.state != 'stopped' and self.current_song!=None:
             song = self.playlist[self.current_song]
             with open(song.filename, 'rb') as r:
                 if song.is_downloaded == True:
@@ -118,6 +122,5 @@ class Player(object):
                         elif flag is True:
                             r.seek(-(len(chunk)), 1)
                             time.sleep(1)
-
 
 

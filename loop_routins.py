@@ -1,7 +1,29 @@
 import requests
 import time
 import shutil
-from utils import noalsaerr
+from utils import noalsaerr, getch, quit
+
+
+def handle_controls(player):
+    while player.state != 'stopped':
+        a = getch()
+        if ord(a) == 3:
+            quit(player)
+        elif a == '>':
+            if player.current_song == len(player.playlist)-1:
+                pass
+            else:
+                player.stream_chunks = []
+                player.stream_chunks.append('reset_time')
+                player.stream_chunks.append('next')
+
+        elif a == '<':
+            if player.current_song == 0:
+                pass
+            else:
+                player.stream_chunks = []
+                player.stream_chunks.append('reset_time')
+                player.stream_chunks.append('previous')
 
 
 def start_stream(player):
@@ -15,17 +37,19 @@ def start_stream(player):
         while player.state != 'stopped':
             if len(player.stream_chunks) == 0:
                 time.sleep(0.1)
+            elif player.stream_chunks[0] == 'previous':
+                if player.current_song != 0:
+                    player.stream_chunks = []
+                    player.current_song -= 1
             elif player.stream_chunks[0] == 'next':
                 if player.current_song == len(player.playlist)-1:
                     player.stream_chunks = []
                     player.stream_chunks.append('stop_player')
                 else:
+                    player.stream_chunks = []
                     player.current_song += 1
-                    del player.stream_chunks[0]
             elif player.stream_chunks[0] == 'stop_player':
-                player.state = 'stopped'
-                player.current_song = None
-                del player.stream_chunks[0]
+                quit(player)
             elif player.stream_chunks[0] not in ('rewind', 'forward', 'reset_time'):
                 stream.write(player.stream_chunks[0]._data)
                 player.current_song_position += 1
@@ -77,7 +101,10 @@ def download_tracks(player):
     while player.state != 'stopped' and player.current_song!=None:
         track = player.playlist[player.current_song]
         while player.current_song == player.playlist.index(track):
-            binds = player.playlist[player.current_song:player.current_song+2]
+            if player.current_song == len(player.playlist)-1:
+                binds = [track]
+            else:
+                binds = player.playlist[player.current_song:player.current_song+2]
             for track in binds:
                 if track.is_downloaded == False:
                     with open(track.filename, 'wb') as f:
