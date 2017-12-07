@@ -1,13 +1,14 @@
 import requests
 import time
 import shutil
+from pyautogui import press
 from utils import noalsaerr, getch, quit
 
 
 def handle_controls(player):
     while player.state != 'stopped':
         a = getch()
-        if ord(a) == 3:
+        if ord(a) == 3 or a=='q':
             quit(player)
         elif a == '>':
             if player.current_song == len(player.playlist)-1:
@@ -49,7 +50,7 @@ def start_stream(player):
                     player.stream_chunks = []
                     player.current_song += 1
             elif player.stream_chunks[0] == 'stop_player':
-                quit(player)
+                press('q')
             elif player.stream_chunks[0] not in ('rewind', 'forward', 'reset_time'):
                 stream.write(player.stream_chunks[0]._data)
                 player.current_song_position += 1
@@ -103,8 +104,10 @@ def download_tracks(player):
         while player.current_song == player.playlist.index(track):
             if player.current_song == len(player.playlist)-1:
                 binds = [track]
-            else:
+            elif player.current_song!=None:
                 binds = player.playlist[player.current_song:player.current_song+2]
+            else:
+                break
             for track in binds:
                 if track.is_downloaded == False:
                     with open(track.filename, 'wb') as f:

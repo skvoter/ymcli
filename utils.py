@@ -63,7 +63,4 @@ def quit(player):
     print('\nExiting...')
     time.sleep(1)
     player.current_song = None
-    # while player.stopped != True:
-        # pass
-
 
