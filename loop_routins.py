@@ -1,8 +1,8 @@
 import requests
 import time
 import shutil
-from pyautogui import press
 from utils import noalsaerr, getch, quit
+from pydub.utils import make_chunks
 
 
 def handle_controls(player):
@@ -10,6 +10,11 @@ def handle_controls(player):
         a = getch()
         if ord(a) == 3 or a=='q':
             quit(player)
+        elif a == 'f':
+            player.stream_chunks.append('forward')
+        elif a == 'b':
+            if len(player.stream_chunks) != 0:
+                player.stream_chunks = [player.stream_chunks[0]]+['backward']
         elif a == '>':
             if player.current_song == len(player.playlist)-1:
                 pass
@@ -50,8 +55,20 @@ def start_stream(player):
                     player.stream_chunks = []
                     player.current_song += 1
             elif player.stream_chunks[0] == 'stop_player':
-                press('q')
-            elif player.stream_chunks[0] not in ('rewind', 'forward', 'reset_time'):
+                player.state = 'stopped'
+                player.current_song_position = 0
+                del player.stream_chunks[0]
+            elif player.stream_chunks[0] == 'backward':
+                if player.current_song_position - 5 >=0 :
+                    seg = player.playlist[player.current_song].segment[
+                        (player.current_song_position-5)*1000:]
+                    player.current_song_position -=5
+                else:
+                    seg = player.playlist[player.current_song].segment
+                    player.current_song_position = 0
+                player.stream_chunks += make_chunks(seg, 1000)
+                del player.stream_chunks[0]
+            elif player.stream_chunks[0] not in ('backward', 'forward', 'reset_time'):
                 stream.write(player.stream_chunks[0]._data)
                 player.current_song_position += 1
                 del player.stream_chunks[0]

@@ -18,6 +18,7 @@ class Song(object):
         self.is_downloaded = False
         self.current_size = 0
         self.current_duration = 0
+        self.segment = None
         self.fullsize = self.meta['fullsize']
         self.duration = self.meta['duration']
         self.download_link = self.get_download_link()
@@ -78,6 +79,7 @@ class Player(object):
         self.stream = pa.PyAudio()
         self.current_song = 0
         self.current_song_position = 0
+        self.play_signals = []
         self.stream_chunks = []
         self.stopped = False
 
@@ -96,27 +98,35 @@ class Player(object):
         handle_loop.start()
         while self.state != 'stopped' and self.current_song!=None:
             song = self.playlist[self.current_song]
+            self.stream_chunks.append('reset_time')
             with open(song.filename, 'rb') as r:
                 if song.is_downloaded == True:
-                    self.stream_chunks.append('reset_time')
-                    segment = AudioSegment.from_mp3(r)
-                    self.stream_chunks += make_chunks(segment, 1000)
+                    song.segment = AudioSegment.from_mp3(r)
+                    self.stream_chunks += make_chunks(song.segment, 1000)
                     while self.current_song == self.playlist.index(song):
-                        time.sleep(1)
+                        time.sleep(0.1)
                 else:
                     flag = True
-                    self.stream_chunks.append('reset_time')
                     while self.current_song == self.playlist.index(song):
                         chunk = r.read(song.chunk_size)
                         if len(chunk)==song.chunk_size:
                             chunk = io.BytesIO(chunk)
                             segment = AudioSegment.from_mp3(chunk)
+                            if song.segment != None:
+                                song.segment.append(segment, crossfade=0)
+                            else:
+                                song.segment = segment
+                            while self.current_song_position + 0.1 < song.segment.duration_seconds-segment.duration_seconds:
+                                time.sleep(0.1)
                             self.stream_chunks += make_chunks(segment, 1000)
                         elif os.path.getsize(song.filename)==song.fullsize and flag is True:
                             if len(chunk)!=0:
                                 chunk = io.BytesIO(chunk)
                                 segment = AudioSegment.from_mp3(chunk)
-                                self.stream_chunks += make_chunks(segment, 1000)
+                                song.segment = song.segment.append(segment, crossfade=0)
+                            while self.current_song_position + 0.1 < song.segment.duration_seconds-segment.duration_seconds:
+                                time.sleep(0.1)
+                            self.stream_chunks += make_chunks(segment, 1000)
                             self.stream_chunks.append('reset_time')
                             flag = False
                         elif flag is True:
