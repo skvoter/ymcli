@@ -1,7 +1,9 @@
+import io
 import requests
 import time
 import shutil
 from utils import noalsaerr, getch, quit
+from pydub import AudioSegment
 from pydub.utils import make_chunks
 
 
@@ -22,7 +24,6 @@ def handle_controls(player):
                 player.stream_chunks = []
                 player.stream_chunks.append('reset_time')
                 player.stream_chunks.append('next')
-
         elif a == '<':
             if player.current_song == 0:
                 pass
@@ -142,6 +143,13 @@ def download_tracks(player):
                         for chunk in r.iter_content(track.chunk_size):
                             f.write(chunk)
                             track.current_size += len(chunk)
+                            rchunk = io.BytesIO(chunk)
+                            segment = AudioSegment.from_mp3(rchunk)
+                            if track.segment != None:
+                                track.segment = track.segment.append(
+                                    segment, crossfade=0)
+                            else:
+                                track.segment = segment
                             if track.current_size == track.fullsize:
                                 track.is_downloaded = True
                                 track.current_size = track.fullsize

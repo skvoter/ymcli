@@ -106,31 +106,17 @@ class Player(object):
                     while self.current_song == self.playlist.index(song):
                         time.sleep(0.1)
                 else:
-                    flag = True
+                    while song.segment == None:
+                        time.sleep(0.1)
+                    seglen = len(song.segment)
+                    oldlen =0
+                    self.stream_chunks += make_chunks(song.segment[oldlen:seglen], 1000)
                     while self.current_song == self.playlist.index(song):
-                        chunk = r.read(song.chunk_size)
-                        if len(chunk)==song.chunk_size:
-                            chunk = io.BytesIO(chunk)
-                            segment = AudioSegment.from_mp3(chunk)
-                            if song.segment != None:
-                                song.segment.append(segment, crossfade=0)
-                            else:
-                                song.segment = segment
-                            while self.current_song_position + 0.1 < song.segment.duration_seconds-segment.duration_seconds:
-                                time.sleep(0.1)
-                            self.stream_chunks += make_chunks(segment, 1000)
-                        elif os.path.getsize(song.filename)==song.fullsize and flag is True:
-                            if len(chunk)!=0:
-                                chunk = io.BytesIO(chunk)
-                                segment = AudioSegment.from_mp3(chunk)
-                                song.segment = song.segment.append(segment, crossfade=0)
-                            while self.current_song_position + 0.1 < song.segment.duration_seconds-segment.duration_seconds:
-                                time.sleep(0.1)
-                            self.stream_chunks += make_chunks(segment, 1000)
-                            self.stream_chunks.append('reset_time')
-                            flag = False
-                        elif flag is True:
-                            r.seek(-(len(chunk)), 1)
-                            time.sleep(1)
+                        oldlen = seglen
+                        seglen = len(song.segment)
+                        while self.current_song_position + 0.1 < int(seglen/1000-oldlen/1000) and self.current_song == self.playlist.index(song):
+                            time.sleep(0.1)
+                        if self.current_song == self.playlist.index(song):
+                            self.stream_chunks += make_chunks(song.segment[oldlen:seglen], 1000)
 
 
