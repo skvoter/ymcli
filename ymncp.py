@@ -2,7 +2,7 @@ import sys
 import os
 import threading
 from utils import ignore_stdout, quit
-from interfaces import Player, Song
+from interfaces import Player, Song, parse_url
 
 def main():
     try:
@@ -10,9 +10,8 @@ def main():
             player = Player()
         print('\nPlaylist:')
         for link in sys.argv[1:]:
-            song = Song(link)
-            player.playlist.append(song)
-            print('{artist} - {title} ({album})'.format_map(song.trackinfo))
+            songs = parse_url(link)
+            player.playlist+= songs
     except KeyboardInterrupt:
         pass
     else:

@@ -4,17 +4,38 @@ from hashlib import md5
 from pydub import AudioSegment
 from pydub.utils import make_chunks
 from threading import Thread
-
+from urllib.parse import urlparse
 from utils import TRACK_DOWNLOAD_INFO, HANDLERS, load_json
 from loop_routins import download_tracks, start_stream, print_line, handle_controls
 
 
+def parse_url(link):
+    path = urlparse(link).path
+    locs = path.lstrip('/').split('/')
+    if locs[-2] == 'track':
+        trackid = link.split('/')[-1]
+        info = load_json(HANDLERS['TRACK'], trackid)['track']
+        song = Song(info)
+        return [song]
+    elif locs[-2] == 'album':
+        albumid = link.split('/')[-1]
+        info = load_json(HANDLERS['ALBUM'], albumid)
+        songs = []
+        for volume in info['volumes']:
+            for song in volume:
+                songinfo = info.copy()
+                songinfo['trackinfo'] = song.copy()
+                del songinfo['volumes']
+                song = Song(songinfo, source='albuminfo')
+                songs.append(song)
+        return songs
+
+
 class Song(object):
 
-    def __init__(self, link, source='trackinfo'):
+    def __init__(self, info, source='trackinfo'):
         self.source = source
-        self.link = link
-        self.meta = self.get_meta()
+        self.meta = self.get_meta(info)
         self.is_downloaded = False
         self.current_size = 0
         self.current_duration = 0
@@ -43,10 +64,8 @@ class Song(object):
         return hsh
 
 
-    def get_meta(self):
+    def get_meta(self, info):
         if self.source == 'trackinfo':
-            trackid = self.link.split('/')[-1]
-            info = load_json(HANDLERS['TRACK'], trackid)['track']
             results = {
                 'fullsize': info['fileSize'],
                 'duration': info['durationMs'],
@@ -62,7 +81,25 @@ class Song(object):
                 },
                 'storage_dir': info['storageDir']
             }
+            print('{artist} - {title} | {album}'.format_map(results['trackinfo']))
             return results
+        elif self.source == 'albuminfo':
+            results = {
+                'fullsize': info['trackinfo']['fileSize'],
+                'duration': info['trackinfo']['durationMs'],
+                'trackinfo': {
+                    'artist': info['artists'][0]['name'] \
+                    if len(info['artists'])==1 \
+                    else ', '.join([x['name'] for x in info['artists']]),
+                    'album': info['title'],
+                    'title': info['trackinfo']['title'],
+                    'year': info['year']
+                },
+                'storage_dir': info['trackinfo']['storageDir']
+            }
+            print('{artist} - {title} | {album}'.format_map(results['trackinfo']))
+            return results
+
 
     def get_download_link(self):
         info = load_json(TRACK_DOWNLOAD_INFO, self.meta['storage_dir'])
@@ -114,7 +151,7 @@ class Player(object):
                     while self.current_song == self.playlist.index(song):
                         oldlen = seglen
                         seglen = len(song.segment)
-                        while seglen/1000-oldlen/1000 and self.current_song == self.playlist.index(song):
+                        while seglen>oldlen and self.current_song == self.playlist.index(song):
                             self.stream_chunks += make_chunks(song.segment[oldlen:seglen], 1000)
                             time.sleep(1)
 
