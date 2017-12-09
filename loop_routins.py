@@ -13,7 +13,8 @@ def handle_controls(player):
         if ord(a) == 3 or a=='q':
             quit(player)
         elif a == 'f':
-            player.stream_chunks.append('forward')
+            if len(player.stream_chunks) != 0:
+                player.stream_chunks.insert(0, 'forward')
         elif a == 'b':
             if len(player.stream_chunks) != 0:
                 player.stream_chunks = [player.stream_chunks[0]]+['backward']
@@ -69,6 +70,21 @@ def start_stream(player):
                     player.current_song_position = 0
                 player.stream_chunks += make_chunks(seg, 1000)
                 del player.stream_chunks[0]
+            elif player.stream_chunks[0] == 'forward':
+                if player.current_song_position + 5 > player.playlist[
+                    player.current_song
+                ].duration:
+                    player.stream_chunks = []
+                    player.stream_chunks.append('reset_time')
+                    player.stream_chunks.append('next')
+                elif player.current_song_position + 5 <= int(len(player.playlist[player.current_song].segment)/1000):
+                    player.stream_chunks = []
+                    seg = player.playlist[player.current_song].segment[
+                        (player.current_song_position+5)*1000:]
+                    player.current_song_position +=5
+                    player.stream_chunks += make_chunks(seg, 1000)
+                else:
+                    del player.stream_chunks[0]
             elif player.stream_chunks[0] not in ('backward', 'forward', 'reset_time'):
                 stream.write(player.stream_chunks[0]._data)
                 player.current_song_position += 1
