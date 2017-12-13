@@ -49,9 +49,11 @@ class Song(object):
 
     def get_chunk_size(self):
         if self.duration >= 120000:
-            for i in range(4,10):
+            for i in range(2,6):
                 if self.fullsize - int(self.fullsize/i)*(i-1) >= 5000 and self.fullsize<= int(self.fullsize/i)*i:
                     return int(self.fullsize/i)
+                else:
+                    return int(self.fullsize)
         else:
             return self.fullsize
 
@@ -151,8 +153,8 @@ class Player(object):
                     while self.current_song == self.playlist.index(song):
                         oldlen = seglen
                         seglen = len(song.segment)
-                        while seglen>oldlen and self.current_song == self.playlist.index(song):
+                        if seglen>oldlen and self.current_song == self.playlist.index(song):
                             self.stream_chunks += make_chunks(song.segment[oldlen:seglen], 1000)
-                            time.sleep(1)
+                        time.sleep(0.1)
 
 
