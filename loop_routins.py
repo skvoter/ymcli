@@ -77,7 +77,7 @@ def start_stream(player):
                     player.stream_chunks = []
                     player.stream_chunks.append('reset_time')
                     player.stream_chunks.append('next')
-                elif player.current_song_position + 5 <= int(len(player.playlist[player.current_song].segment)/1000):
+                elif player.current_song_position + 5 < len(player.playlist[player.current_song].segment)/1000:
                     player.stream_chunks = []
                     seg = player.playlist[player.current_song].segment[
                         (player.current_song_position+5)*1000:]
@@ -88,7 +88,8 @@ def start_stream(player):
             elif player.stream_chunks[0] not in ('backward', 'forward', 'reset_time'):
                 stream.write(player.stream_chunks[0]._data)
                 player.current_song_position += 1
-                del player.stream_chunks[0]
+                if player.stream_chunks[0] not in ('next', 'forward', 'backward'):
+                    del player.stream_chunks[0]
                 if player.current_song_position > (
                     player.playlist[player.current_song].duration/1000
                 ):

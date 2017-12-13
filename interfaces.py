@@ -149,7 +149,10 @@ class Player(object):
                         time.sleep(0.1)
                     seglen = len(song.segment)
                     oldlen =0
-                    self.stream_chunks += make_chunks(song.segment[oldlen:seglen], 1000)
+                    if self.current_song == self.playlist.index(song):
+                        self.stream_chunks += make_chunks(song.segment[oldlen:seglen], 1000)
+                    else:
+                        continue
                     while self.current_song == self.playlist.index(song):
                         oldlen = seglen
                         seglen = len(song.segment)
