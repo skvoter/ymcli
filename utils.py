@@ -1,21 +1,28 @@
-import requests, json, os, sys, contextlib, string, time
+import requests
+import json
+import os
+import sys
+import tty
+import termios
+import contextlib
+import time
 from ctypes import CFUNCTYPE, c_char_p, c_int, cdll
-import threading
 
 
-TRACK_DOWNLOAD_INFO = 'https://storage.mds.yandex.net/download-info/{}/2?format=json'
+TRACK_DOWNLOAD_INFO = ('https://storage.mds.yandex.net/download-info/{}/'
+                       + '2?format=json')
 HANDLERS = {
     'TRACK': 'https://music.yandex.ru/handlers/track.jsx?track={}',
     'ALBUM': 'https://music.yandex.ru/handlers/album.jsx?album={}',
     'ARTIST': 'https://music.yandex.ru/handlers/artist.jsx?artist={}',
 }
 
+
 class _Getch:
     def __init__(self):
-        import tty, sys
+        pass
 
     def __call__(self):
-        import sys, tty, termios
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
         try:
@@ -25,11 +32,14 @@ class _Getch:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
 
+
 getch = _Getch()
+
 
 def load_json(handler, id):
     r = requests.get(handler.format(id))
     return json.loads(r.content)
+
 
 @contextlib.contextmanager
 def ignore_stdout():
@@ -44,11 +54,17 @@ def ignore_stdout():
         os.dup2(old_stdout, 2)
         os.close(old_stdout)
 
-ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+
+ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int,
+                               c_char_p, c_int, c_char_p)
+
 
 def py_error_handler(filename, line, function, err, fmt):
     pass
+
+
 c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+
 
 @contextlib.contextmanager
 def noalsaerr():
@@ -63,4 +79,3 @@ def quit(player):
     print('\nExiting...')
     time.sleep(1)
     player.current_song = None
-
