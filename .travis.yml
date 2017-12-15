@@ -2,6 +2,13 @@ language: python
 python:
   - "3.6"
 
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install -y libasound-dev
+  - wget http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz
+  - tar -xzvf pa_stable_v190600_20161030.tgz
+  - pushd pa_stable_v190600_20161030 && ./configure && make && sudo make install
+
 install:
   - pip install -r requirements.txt
 
