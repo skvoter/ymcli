@@ -12,7 +12,6 @@ olefile==0.44
 pefile==2017.11.5
 Pillow==4.3.0
 PyAudio==0.2.11
-PyAutoGUI==0.9.36
 pycodestyle==2.3.1
 pydub==0.20.0
 pyflakes==1.6.0
