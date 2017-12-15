@@ -1,4 +1,4 @@
-### ymncp
+### ymncp [![Build Status](https://travis-ci.org/skvoter/ymncp.svg?branch=master)](https://travis-ci.org/skvoter/ymncp)
 
 **ymncp** is a command-line interface player for listening Yandex.Music in your terminal.
 
