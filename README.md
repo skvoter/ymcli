@@ -6,7 +6,10 @@
 ****THIS SOFTWARE IS NOT INTEDED FOR DOWNLOADING MUSIC. IT DOES NOT DOWNLOAD TRACKS****
 ## Usage:
 
-This soft is under development right now. It's supposed to be ncurses fully-functional player with search and stuff.
+This soft is under development right now.
+** TODO:
+- search function
+- some key features such as shuffle and repeat
 
 Right now here is just dummy one-line status line and playlist is realized through cli arguments.
 
