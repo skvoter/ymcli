@@ -1,6 +1,6 @@
-### ymncp [![Build Status](https://travis-ci.org/skvoter/ymncp.svg?branch=master)](https://travis-ci.org/skvoter/ymncp)
+### ymcli [![Build Status](https://travis-ci.org/skvoter/ymncp.svg?branch=master)](https://travis-ci.org/skvoter/ymncp)
 
-**ymncp** is a command-line interface player for listening Yandex.Music in your terminal.
+**ymcli** is a command-line interface player for listening Yandex.Music in your terminal.
 
 
 ****THIS SOFTWARE IS NOT INTEDED FOR DOWNLOADING MUSIC. IT DOES NOT DOWNLOAD TRACKS****
