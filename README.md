@@ -7,7 +7,8 @@
 ## Usage:
 
 This soft is under development right now.
-** TODO:
+
+**TODO** :
 - search function
 - some key features such as shuffle and repeat
 - clean repo and provide package
