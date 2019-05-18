@@ -9,12 +9,13 @@ import time
 from ctypes import CFUNCTYPE, c_char_p, c_int, cdll
 
 
-TRACK_DOWNLOAD_INFO = ('https://storage.mds.yandex.net/download-info/{}/'
-                       + '2?format=json')
+TRACK_DOWNLOAD_INFO = (
+    "https://storage.mds.yandex.net/download-info/{}/" + "2?format=json"
+)
 HANDLERS = {
-    'TRACK': 'https://music.yandex.ru/handlers/track.jsx?track={}',
-    'ALBUM': 'https://music.yandex.ru/handlers/album.jsx?album={}',
-    'ARTIST': 'https://music.yandex.ru/handlers/artist.jsx?artist={}',
+    "TRACK": "https://music.yandex.ru/handlers/track.jsx?track={}",
+    "ALBUM": "https://music.yandex.ru/handlers/album.jsx?album={}",
+    "ARTIST": "https://music.yandex.ru/handlers/artist.jsx?artist={}",
 }
 
 
@@ -55,8 +56,7 @@ def ignore_stdout():
         os.close(old_stdout)
 
 
-ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int,
-                               c_char_p, c_int, c_char_p)
+ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
 
 
 def py_error_handler(filename, line, function, err, fmt):
@@ -68,14 +68,14 @@ c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
 
 @contextlib.contextmanager
 def noalsaerr():
-    asound = cdll.LoadLibrary('libasound.so.2')
+    asound = cdll.LoadLibrary("libasound.so.2")
     asound.snd_lib_error_set_handler(c_error_handler)
     yield
     asound.snd_lib_error_set_handler(None)
 
 
 def quit(player):
-    player.state = 'stopped'
-    print('\nExiting...')
+    player.state = "stopped"
+    print("\nExiting...")
     time.sleep(1)
     player.current_song = None
