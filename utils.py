@@ -68,7 +68,7 @@ c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
 
 @contextlib.contextmanager
 def noalsaerr():
-    asound = cdll.LoadLibrary('libasound.so')
+    asound = cdll.LoadLibrary('libasound.so.2')
     asound.snd_lib_error_set_handler(c_error_handler)
     yield
     asound.snd_lib_error_set_handler(None)
