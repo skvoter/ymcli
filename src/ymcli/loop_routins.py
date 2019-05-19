@@ -2,7 +2,7 @@ import io
 import requests
 import time
 import shutil
-from utils import noalsaerr, getch, quit
+from .utils import noalsaerr, getch, quit
 from pydub import AudioSegment
 from pydub.utils import make_chunks
 

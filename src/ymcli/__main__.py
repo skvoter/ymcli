@@ -1,8 +1,8 @@
 import sys
 import os
 import threading
-from utils import ignore_stdout, quit
-from interfaces import Player, parse_url
+from ymcli.utils import ignore_stdout, quit
+from ymcli.interfaces import Player, parse_url
 
 
 def main():
@@ -10,6 +10,7 @@ def main():
         with ignore_stdout():
             player = Player()
         print("\nPlaylist:")
+        assert len(sys.argv[1:]) > 0
         for link in sys.argv[1:]:
             songs = parse_url(link)
             player.playlist += songs

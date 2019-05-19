@@ -6,8 +6,8 @@ from pydub import AudioSegment
 from pydub.utils import make_chunks
 from threading import Thread
 from urllib.parse import urlparse
-from utils import TRACK_DOWNLOAD_INFO, HANDLERS, load_json
-from loop_routins import download_tracks, start_stream, print_line, handle_controls
+from .utils import TRACK_DOWNLOAD_INFO, HANDLERS, load_json
+from .loop_routins import download_tracks, start_stream, print_line, handle_controls
 
 
 def parse_url(link):
