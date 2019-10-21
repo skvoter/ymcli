@@ -20,4 +20,4 @@ PyScreeze==0.1.13
 python3-xlib==0.15
 PyTweening==1.0.3
 requests>=2.20.0
-urllib3==1.22
+urllib3==1.24.2
