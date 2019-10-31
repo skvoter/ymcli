@@ -115,13 +115,12 @@ def print_line(player):
         current_song = player.playlist[player.current_song]
         songinfo = (current_song.trackinfo['artist']
                     + ' - ' + current_song.trackinfo['title'])
-        current_time = ('{:0>2}:{:0>2}'.format(
+        current_time = '{:0>2}:{:0>2}/{:0>2}:{:0>2}'.format(
             divmod(player.current_song_position, 60)[0],
-            divmod((player.current_song_position, 60)[1]))
-                        + '/'
-                        + '{:0>2}:{:0>2}'.format(
-                            divmod(int(current_song.duration/1000), 60)[0],
-                            divmod(int(current_song.duration/1000), 60)[1]))
+            divmod(player.current_song_position, 60)[1],
+            divmod(int(current_song.duration/1000), 60)[0],
+            divmod(int(current_song.duration/1000), 60)[1],
+            )
         gaplen = (shutil.get_terminal_size()[0]
                   - len(current_time)
                   - len(songinfo) - 2)
