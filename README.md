@@ -7,13 +7,6 @@
 ****THIS SOFTWARE IS NOT INTEDED FOR DOWNLOADING MUSIC. IT DOES NOT DOWNLOAD TRACKS****
 ## Usage:
 
-This soft is under development right now.
-
-**TODO** :
-- search function
-- some key features such as shuffle and repeat
-- clean repo and provide package
-
 Right now here is just dummy one-line status line and playlist is realized through cli arguments.
 
 `./ymncp https://music.yandex.ru/album/48082`
