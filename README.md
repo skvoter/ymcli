@@ -1,4 +1,5 @@
 ### ymcli [![Build Status](https://travis-ci.org/skvoter/ymcli.svg?branch=master)](https://travis-ci.org/skvoter/ymncp)
+****No longer developed****
 
 **ymcli** is a command-line interface player for listening Yandex.Music in your terminal.
 
